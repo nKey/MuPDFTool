@@ -20,7 +20,6 @@ public class Main {
 	private static MuPDFCore core;
 
 	public static void main(String[] args) {
-		log("INIT");
 		if (args==null || args.length==0) {
 			log("No args! To help run mupdftool -h");
 			System.exit(1);

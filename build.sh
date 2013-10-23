@@ -15,6 +15,6 @@ $ANDROID_PATH/aapt add mupdftool.jar classes.dex
 rm Temp.jar
 rm classes.dex
 ## convenience code. copy mupdftool.jar and libmupdf.so to your application folder, to run it with run_mupdftool.sh, as example project.
-#cp mupdftool.jar LibTest/assets
-#cp libmupdf.so LibTest/assets
+cp mupdftool.jar ../MuPDFToolUsageExample/assets
+cp libmupdf.so ../MuPDFToolUsageExample/assets
 echo "OK!"
