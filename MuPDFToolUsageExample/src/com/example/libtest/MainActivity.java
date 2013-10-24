@@ -7,12 +7,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Point;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v4.view.ViewPager;
@@ -73,7 +75,7 @@ public class MainActivity extends Activity {
 	
 	private void setupSubviews() {
 		viewPager = (ViewPager) findViewById(R.id.viewpager);
-		viewPagerAdapter = new PdfPageAdapter(this, outputPath+screenWidth+"x"+screenHeight);
+		viewPagerAdapter = new PdfPageAdapter(this, outputPath+Integer.toString(screenWidth)+"x"+Integer.toString(screenHeight));
 		viewPager.setAdapter(viewPagerAdapter);
 		progressBar = (ProgressBar) findViewById(R.id.progressBar);
 		progressBar.setProgress(0);
@@ -85,10 +87,17 @@ public class MainActivity extends Activity {
 		MUPDFTOOL_SH_LOCATION = copyAssetToFilesDir(MUPDFTOOL_SH);
 	}
 
+	@SuppressWarnings("deprecation")
+	@SuppressLint("NewApi")
 	private void storeScreenSize() {
 		Display display = getWindowManager().getDefaultDisplay();
 		Point size = new Point();
-		display.getSize(size);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+			display.getSize(size);
+		} else {
+			size.x = display.getWidth();
+			size.y = display.getHeight();
+		}
 		screenWidth = size.x;
 		screenHeight = size.y;
 	}
@@ -106,7 +115,7 @@ public class MainActivity extends Activity {
 		if (!existingAsset.exists()||newAssetDescriptor==null||newAssetDescriptor.getLength()!=existingAsset.length()) {
 			try {
 				InputStream in = getAssets().open(asset);
-				FileOutputStream out = new FileOutputStream(existingAsset);
+				FileOutputStream out = new FileOutputStream(existingAsset);//
 				byte[] buffer = new byte[1024];
 				int read = 0;
 				try {
@@ -143,7 +152,7 @@ public class MainActivity extends Activity {
 					Process process = Runtime.getRuntime().exec(myExec);
 					BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 					StringBuffer output = new StringBuffer();
-					char[] buffer = new char[50];
+					char[] buffer = new char[6];
 				    int read;
 					while ((read = reader.read(buffer)) > 0) {
 				        output.append(buffer, 0, read);
@@ -152,12 +161,14 @@ public class MainActivity extends Activity {
 				        lastAppendBuffer.append(buffer,0,buffer.length);
 				        
 				        String lastAppend = lastAppendBuffer.toString().trim();
-				        if (lastAppend.length() >= 16 && lastAppend.substring(0, 16).equals("Page % completed")) {
-				        	publishProgress(lastAppend.substring(17));
+				        if (lastAppend.length() > 3 && lastAppend.substring(0, 2).equals("%%")) {
+				        	publishProgress(lastAppend.substring(3));
 				        }
 				    }
 				    reader.close();
-					Log.w(TAG, "process response: "+output);
+				    for( String line : output.toString().split("\n") ) {
+				        Log.d( TAG, line );
+				    }
 				} catch (IOException e) {
 					e.printStackTrace();
 				}

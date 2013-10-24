@@ -15,9 +15,11 @@ public class Main {
 	
 	private static final int ZOOM_MIN = 40;
 	private static final int ZOOM_MAX = 150;
-	private static final int LOG_MAX_LENGTH = 50;
+	private static final int LOG_MAX_LENGTH = 6;
 	
 	private static MuPDFCore core;
+	public static String memoryUsage = "";
+	public static String memoryAvailable = "";
 
 	public static void main(String[] args) {
 		if (args==null || args.length==0) {
@@ -138,14 +140,14 @@ public class Main {
 		String saveZoom0Path =  savePath+"/"+Integer.toString(zoom0Level);
 		for (int page = pageStart; page <= pageEnd; page++) {
 			generatePdfPageWithZoom(pdfPath, saveZoom0Path, page, zoom0Level);
-			log("Page % completed "+(int)(((double)(page-pageStart+1)/totalPages)*100));
+			log("%% "+(int)(((double)(page-pageStart+1)/totalPages)*100));
 		}
 		if (zoom1Level != null) {
 			String saveZoom1Path =  savePath+"/"+Integer.toString(zoom1Level);
 			int previousLoadedPages = (pageEnd-pageStart+1);
 			for (int page = pageStart; page <= pageEnd; page++) {
 				generatePdfPageWithZoom(pdfPath, saveZoom1Path, page, zoom1Level);
-				log("Page % completed "+(int)(((double)((page-pageStart+1)+previousLoadedPages)/totalPages)*100));
+				log("%% "+(int)(((double)((page-pageStart+1)+previousLoadedPages)/totalPages)*100));
 			}
 		}
 	}
@@ -163,14 +165,14 @@ public class Main {
 		String saveSize0Path = savePath+"/"+Integer.toString((int)size0.x)+"x"+Integer.toString((int)size0.y);
 		for (int page = pageStart; page <= pageEnd; page++) {
 			generatePdfPage(pdfPath, saveSize0Path, page, (int)size0.x, (int)size0.y);
-			log("Page % completed "+(int)(((double)(page-pageStart+1)/totalPages)*100));
+			log("%% "+(int)(((double)(page-pageStart+1)/totalPages)*100));
 		}
 		if (size1 != null) {
 			String saveSize1Path = savePath+"/"+Integer.toString((int)size1.x)+"x"+Integer.toString((int)size1.y);
 			int previousLoadedPages = (pageEnd-pageStart+1);
 			for (int page = pageStart; page <= pageEnd; page++) {
 				generatePdfPage(pdfPath, saveSize1Path, page, (int)size1.x, (int)size1.y);
-				log("Page % completed "+(int)(((double)((page-pageStart+1)+previousLoadedPages)/totalPages)*100));
+				log("%% "+(int)(((double)((page-pageStart+1)+previousLoadedPages)/totalPages)*100));
 			}	
 		}
 	}
@@ -204,7 +206,6 @@ public class Main {
 		
 		Bitmap bitmapPage = Bitmap.createBitmap(newSize.x, newSize.y, Config.ARGB_8888);
 		core.drawPage(bitmapPage, pageNumber, newSize.x, newSize.y, 0, 0, newSize.x, newSize.y);
-		
 		String saveFilePath = savePath+"/"+pageNumber+".jpg";
 		File outputFile = new File(saveFilePath);
 		outputFile.getParentFile().mkdirs();
@@ -212,12 +213,12 @@ public class Main {
 			FileOutputStream out = new FileOutputStream(outputFile);
 			bitmapPage.compress(Bitmap.CompressFormat.JPEG, 92, out);
 			out.close();
-			log("	saved at "+saveFilePath);
 		} catch (Exception e) {
 	    	log("	Exception when generatingPdfPage");
 			e.printStackTrace();
 			System.exit(1);
 		}
+		System.gc();
 	}
 
 	private static void log(String string) {
