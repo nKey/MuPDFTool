@@ -15,11 +15,17 @@ public class Main {
 	
 	private static final int ZOOM_MIN = 40;
 	private static final int ZOOM_MAX = 150;
-	private static final int LOG_MAX_LENGTH = 50;
+	private static final int LOG_MAX_LENGTH = 6;
+	private static final boolean assynchronousBenchmark = true;
 	
 	private static MuPDFCore core;
+	public static String memoryUsage = "";
+	public static String memoryAvailable = "";
 
 	public static void main(String[] args) {
+		if (assynchronousBenchmark) {
+			startMemoryLog();
+		}
 		if (args==null || args.length==0) {
 			log("No args! To help run mupdftool -h");
 			System.exit(1);
@@ -122,6 +128,8 @@ public class Main {
 				}
 			}
 		}
+		System.out.println("Used memory: "+memoryUsage);
+		System.out.println("Heap size: "+memoryAvailable);
 		System.exit(0);
 	}
 
@@ -138,14 +146,14 @@ public class Main {
 		String saveZoom0Path =  savePath+"/"+Integer.toString(zoom0Level);
 		for (int page = pageStart; page <= pageEnd; page++) {
 			generatePdfPageWithZoom(pdfPath, saveZoom0Path, page, zoom0Level);
-			log("Page % completed "+(int)(((double)(page-pageStart+1)/totalPages)*100));
+			log("%% "+(int)(((double)(page-pageStart+1)/totalPages)*100));
 		}
 		if (zoom1Level != null) {
 			String saveZoom1Path =  savePath+"/"+Integer.toString(zoom1Level);
 			int previousLoadedPages = (pageEnd-pageStart+1);
 			for (int page = pageStart; page <= pageEnd; page++) {
 				generatePdfPageWithZoom(pdfPath, saveZoom1Path, page, zoom1Level);
-				log("Page % completed "+(int)(((double)((page-pageStart+1)+previousLoadedPages)/totalPages)*100));
+				log("%% "+(int)(((double)((page-pageStart+1)+previousLoadedPages)/totalPages)*100));
 			}
 		}
 	}
@@ -163,14 +171,14 @@ public class Main {
 		String saveSize0Path = savePath+"/"+Integer.toString((int)size0.x)+"x"+Integer.toString((int)size0.y);
 		for (int page = pageStart; page <= pageEnd; page++) {
 			generatePdfPage(pdfPath, saveSize0Path, page, (int)size0.x, (int)size0.y);
-			log("Page % completed "+(int)(((double)(page-pageStart+1)/totalPages)*100));
+			log("%% "+(int)(((double)(page-pageStart+1)/totalPages)*100));
 		}
 		if (size1 != null) {
 			String saveSize1Path = savePath+"/"+Integer.toString((int)size1.x)+"x"+Integer.toString((int)size1.y);
 			int previousLoadedPages = (pageEnd-pageStart+1);
 			for (int page = pageStart; page <= pageEnd; page++) {
 				generatePdfPage(pdfPath, saveSize1Path, page, (int)size1.x, (int)size1.y);
-				log("Page % completed "+(int)(((double)((page-pageStart+1)+previousLoadedPages)/totalPages)*100));
+				log("%% "+(int)(((double)((page-pageStart+1)+previousLoadedPages)/totalPages)*100));
 			}	
 		}
 	}
@@ -196,6 +204,7 @@ public class Main {
 	}
 	
 	private static void generatePdfPage(String pdfPath, String savePath, int pageNumber, int width, int height) {
+		saveMem();
 		int parentWidth = width;
 		int parentHeight = height;
 		PointF pageSize = core.getPageSize(pageNumber);
@@ -203,23 +212,80 @@ public class Main {
 		Point newSize = new Point((int)(pageSize.x*mSourceScale), (int)(pageSize.y*mSourceScale));
 		
 		Bitmap bitmapPage = Bitmap.createBitmap(newSize.x, newSize.y, Config.ARGB_8888);
+		saveMem();
 		core.drawPage(bitmapPage, pageNumber, newSize.x, newSize.y, 0, 0, newSize.x, newSize.y);
-		
+		saveMem();
 		String saveFilePath = savePath+"/"+pageNumber+".jpg";
 		File outputFile = new File(saveFilePath);
 		outputFile.getParentFile().mkdirs();
 		try {
 			FileOutputStream out = new FileOutputStream(outputFile);
+			saveMem();
 			bitmapPage.compress(Bitmap.CompressFormat.JPEG, 92, out);
+			saveMem();
 			out.close();
-			log("	saved at "+saveFilePath);
 		} catch (Exception e) {
 	    	log("	Exception when generatingPdfPage");
 			e.printStackTrace();
 			System.exit(1);
 		}
+		System.gc();
+		saveMem();
 	}
 
+	private static String mem() {
+		Runtime runtime = Runtime.getRuntime();
+	    StringBuilder sb = new StringBuilder();
+	    long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+	    sb.append(Long.toString(usedMemory / 1024));
+	    return sb.toString();
+	}
+	
+	private static String heap() {
+		Runtime runtime = Runtime.getRuntime();
+	    StringBuilder sb = new StringBuilder();
+	    long allocatedMemory = runtime.totalMemory();
+	    sb.append(Long.toString(allocatedMemory / 1024));
+	    return sb.toString();
+	}
+	
+	private static void startMemoryLog() {
+		class MemoryLogger implements Runnable {
+		    public void run() {
+		    	while(true) {
+			    	try {
+			    		if (!memoryUsage.isEmpty()) {
+			    			memoryUsage+=";";
+			    		}
+			    		memoryUsage+=mem();
+			    		if (!memoryAvailable.isEmpty()) {
+			    			memoryAvailable+=";";
+			    		}
+			    		memoryAvailable+=heap();
+			    		Thread.sleep(40);
+			    	} catch (InterruptedException e) {
+			    		e.printStackTrace();
+			    	}
+		    	}
+		    }
+		}
+		new Thread(new MemoryLogger()).start();
+	}
+
+	
+	private static void saveMem() {
+		if (!assynchronousBenchmark) {
+			if (!memoryUsage.isEmpty()) {
+				memoryUsage+=";";
+			}
+			memoryUsage+=mem();
+			if (!memoryAvailable.isEmpty()) {
+				memoryAvailable+=";";
+			}
+			memoryAvailable+=heap();
+		}
+	}
+	
 	private static void log(String string) {
 		if (string.length()<=LOG_MAX_LENGTH) {
 			System.out.println(padString(string, LOG_MAX_LENGTH));
