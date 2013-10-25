@@ -37,8 +37,8 @@ public class Main {
 			for (int i = 0; i < args.length; i=i+2) {
 				if (args.length>=i+1 && args[i].startsWith("-")) {
 					parameters.put(args[i], args[i+1]);
-				} else {
-					log("Error: Invalid args. To help run mupdftool -h");
+				} else if (!args[i].isEmpty()) {
+					log("Error: Invalid arg'"+args[i]+"'. To help run mupdftool -h");
 					System.exit(1);
 				}
 			}

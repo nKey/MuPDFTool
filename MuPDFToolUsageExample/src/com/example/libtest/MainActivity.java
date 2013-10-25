@@ -59,12 +59,23 @@ public class MainActivity extends Activity {
 	    .setView(input)
 	    .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
 	        public void onClick(DialogInterface dialog, int whichButton) {
-	    		executeBashCommand("/system/bin/sh " + MUPDFTOOL_SH_LOCATION + " " + getCacheDir().getAbsolutePath() + " -pdf "+input.getText().toString() + " -outputPath " + outputPath + " -size " + screenWidth + "x" + screenHeight);
+	        	String[] args = new String[9];
+	        	args[0] = "/system/bin/sh";
+	        	args[1] = MUPDFTOOL_SH_LOCATION;
+	        	args[2] = getCacheDir().getAbsolutePath();
+	        	args[3] = "-pdf";
+	        	args[4] = input.getText().toString();
+	        	args[5] = "-outputPath";
+	        	args[6] = outputPath;
+	        	args[7] = "-size";
+	        	args[8] = screenWidth + "x" + screenHeight;
+	    		executeBashCommand(args);
+	    		
 	    		//other call examples: (obs: you will need to change PdfPageAdapter creation arguments to match the outputPath folder)
-//	    		executeBashCommand("/system/bin/sh " + MUPDFTOOL_SH_LOCATION + " " + getCacheDir().getAbsolutePath() + " -pdf "+input.getText().toString() + " -outputPath " + outputPath + " -pages 0-29 -size "+screenWidth+"x"+screenHeight);
-//	    		executeBashCommand("/system/bin/sh " + MUPDFTOOL_SH_LOCATION + " " + getCacheDir().getAbsolutePath() + " -pdf "+input.getText().toString() + " -outputPath " + outputPath + " -pages 10 -size "+screenWidth/3+"x"+screenHeight/3+":"+screenWidth+"x"+screenHeight);
-//	    		executeBashCommand("/system/bin/sh " + MUPDFTOOL_SH_LOCATION + " " + getCacheDir().getAbsolutePath() + " -pdf "+input.getText().toString() + " -outputPath " + outputPath + " -pages 0-9 -zoom 40:100");
-//	    		executeBashCommand("/system/bin/sh " + MUPDFTOOL_SH_LOCATION + " " + getCacheDir().getAbsolutePath() + " -pdf "+input.getText().toString() + " -outputPath " + outputPath + " -pages 0-4 -zoom 100");
+//	    		"/system/bin/sh " + MUPDFTOOL_SH_LOCATION + " " + getCacheDir().getAbsolutePath() + " -pdf "+input.getText().toString() + " -outputPath " + outputPath + " -pages 0-29 -size "+screenWidth+"x"+screenHeight
+//	    		"/system/bin/sh " + MUPDFTOOL_SH_LOCATION + " " + getCacheDir().getAbsolutePath() + " -pdf "+input.getText().toString() + " -outputPath " + outputPath + " -pages 10 -size "+screenWidth/3+"x"+screenHeight/3+":"+screenWidth+"x"+screenHeight
+//	    		"/system/bin/sh " + MUPDFTOOL_SH_LOCATION + " " + getCacheDir().getAbsolutePath() + " -pdf "+input.getText().toString() + " -outputPath " + outputPath + " -pages 0-9 -zoom 40:100"
+//	    		"/system/bin/sh " + MUPDFTOOL_SH_LOCATION + " " + getCacheDir().getAbsolutePath() + " -pdf "+input.getText().toString() + " -outputPath " + outputPath + " -pages 0-4 -zoom 100"
 	        }
 	    }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
 	        public void onClick(DialogInterface dialog, int whichButton) {
@@ -138,13 +149,13 @@ public class MainActivity extends Activity {
 		return cachedAssetFilePath;
 	}
 
-	private void executeBashCommand(String myExec) {
+	private void executeBashCommand(String[] myExec) {
 		new AsyncTask<Object, String, Void>() {
 			ViewPager viewPager;
 			ProgressBar progressBar;
 			@Override
 			protected Void doInBackground(Object... params) {
-				String myExec = (String) params[0];
+				String[] myExec = (String[]) params[0];
 				viewPager = (ViewPager) params[1];
 				progressBar = (ProgressBar) params[2];
 				try {
